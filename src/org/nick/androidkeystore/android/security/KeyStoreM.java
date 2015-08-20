@@ -25,7 +25,8 @@ import android.annotation.TargetApi;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.RemoteException;
-import android.security.IKeystoreService;
+import android.security.IKeystoreServiceM;
+import android.security.KeystoreArguments;
 import android.util.Log;
 
 /**
@@ -61,9 +62,9 @@ public class KeyStoreM extends KeyStore {
 
     private int mError = NO_ERROR;
 
-    private final IKeystoreService mBinder;
+    private final IKeystoreServiceM mBinder;
 
-    private KeyStoreM(IKeystoreService binder) {
+    private KeyStoreM(IKeystoreServiceM binder) {
         mBinder = binder;
     }
 
@@ -77,7 +78,7 @@ public class KeyStoreM extends KeyStore {
             Method getService = smClass.getMethod("getService", String.class);
             IBinder binder = (IBinder) getService.invoke(null,
                     "android.security.keystore");
-            IKeystoreService keystore = IKeystoreService.Stub
+            																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																						IKeystoreServiceM keystore = IKeystoreServiceM.Stub
                     .asInterface(binder);
             return new KeyStoreM(keystore);
         } catch (ClassNotFoundException e) {
@@ -108,17 +109,7 @@ public class KeyStoreM extends KeyStore {
     public State state() {
         final int ret;
         try {
-        	try{
-
-                Class<?> smClass = Class.forName("android.security.IKeystoreService");
-
-                Method getState = smClass.getMethod("getState", int.class);
-                ret = (Integer) getState.invoke(mBinder, 0 ); // FIXME : get actual current user ID
-
-                }catch (Exception e){
-                    e.printStackTrace();
-                    throw new RemoteException(e.getMessage());
-                }
+        	ret = mBinder.getState(0); // FIXME : get actual user id
         } catch (RemoteException e) {
             Log.w(TAG, "Cannot connect to keystore", e);
             throw new AssertionError(e);
@@ -187,7 +178,7 @@ public class KeyStoreM extends KeyStore {
 
     public String[] saw(String prefix, int uid) {
         try {
-            return mBinder.saw(prefix, uid);
+            return mBinder.list(prefix, uid);
         } catch (RemoteException e) {
             Log.w(TAG, "Cannot connect to keystore", e);
             return null;
@@ -209,7 +200,7 @@ public class KeyStoreM extends KeyStore {
 
     public boolean password(String password) {
         try {
-            return mBinder.password(password) == NO_ERROR;
+            return mBinder.unlock(0, password) == NO_ERROR; // FIXME user id
         } catch (RemoteException e) {
             Log.w(TAG, "Cannot connect to keystore", e);
             return false;
@@ -218,7 +209,7 @@ public class KeyStoreM extends KeyStore {
 
     public boolean lock() {
         try {
-            return mBinder.lock() == NO_ERROR;
+            return mBinder.lock(0) == NO_ERROR;  // FIXME user id
         } catch (RemoteException e) {
             Log.w(TAG, "Cannot connect to keystore", e);
             return false;
@@ -227,7 +218,7 @@ public class KeyStoreM extends KeyStore {
 
     public boolean unlock(String password) {
         try {
-            mError = mBinder.unlock(password);
+            mError = mBinder.unlock(0, password);   // FIXME user id
             return mError == NO_ERROR;
         } catch (RemoteException e) {
             Log.w(TAG, "Cannot connect to keystore", e);
@@ -237,7 +228,7 @@ public class KeyStoreM extends KeyStore {
 
     public boolean isEmpty() {
         try {
-            return mBinder.zero() == KEY_NOT_FOUND;
+            return mBinder.isEmpty(0)== KEY_NOT_FOUND;
         } catch (RemoteException e) {
             Log.w(TAG, "Cannot connect to keystore", e);
             return false;
@@ -247,7 +238,8 @@ public class KeyStoreM extends KeyStore {
     public boolean generate(String key, int uid, int keyType, int keySize, int flags,
             byte[][] args) {
         try {
-            return mBinder.generate(key, uid, keyType, keySize, flags, args) == NO_ERROR;
+        	KeystoreArguments ksa = new KeystoreArguments(args);
+            return mBinder.generate(key, uid, keyType, keySize, flags, ksa) == NO_ERROR;
         } catch (RemoteException e) {
             Log.w(TAG, "Cannot connect to keystore", e);
             return false;
@@ -274,7 +266,7 @@ public class KeyStoreM extends KeyStore {
 
     public boolean delKey(String key, int uid) {
         try {
-            return mBinder.del_key(key, uid) == NO_ERROR;
+            return mBinder.del(key, uid) == NO_ERROR;
         } catch (RemoteException e) {
             Log.w(TAG, "Cannot connect to keystore", e);
             return false;
