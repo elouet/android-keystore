@@ -11,6 +11,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.nick.androidkeystore.android.security.KeyStore;
 import org.nick.androidkeystore.android.security.KeyStoreJb43;
 import org.nick.androidkeystore.android.security.KeyStoreKk;
+import org.nick.androidkeystore.android.security.KeyStoreM;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
@@ -38,6 +39,7 @@ public class KeystoreActivity extends Activity implements OnClickListener {
     private static final boolean IS_JB43 = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2;
     private static final boolean IS_JB = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN;
     private static final boolean IS_KK = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
+    private static final boolean IS_M = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M;
 
     private static final String EXTRA_CIPHERTEXT = "org.nick.androidkeystore.CIPHERTEXT";
     private static final String EXTRA_KEY_NAME = "org.nick.androidkeystore.KEY_NAME";
@@ -99,7 +101,9 @@ public class KeystoreActivity extends Activity implements OnClickListener {
             decryptedText.setText(plaintext);
         }
 
-        if (IS_KK) {
+        if (IS_M) {
+            ks = KeyStoreM.getInstance();
+        } else if (IS_KK) {
             ks = KeyStoreKk.getInstance();
         } else if (IS_JB43) {
             ks = KeyStoreJb43.getInstance();
@@ -179,7 +183,11 @@ public class KeystoreActivity extends Activity implements OnClickListener {
                 String status = String.format("Keystore state:%s", ks.state()
                         .toString());
                 String storeType = null;
-                if (IS_KK) {
+                
+                if (IS_M) {
+                    storeType = ((KeyStoreM) ks).isHardwareBacked() ? "HW-backed"
+                            : "SW only";
+                } else if (IS_KK) {
                     storeType = ((KeyStoreKk) ks).isHardwareBacked() ? "HW-backed"
                             : "SW only";
                 } else if (IS_JB43) {
